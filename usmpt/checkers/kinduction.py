@@ -122,5 +122,48 @@ class KInduction(AbstractChecker):
         int
             Iteration number of the unsat query.
         """
-        raise NotImplementedError
+        
+        info("[K-INDUCTION] > Initialization")
+
+        info("[K-INDUCTION] > Declaration of the places from the Petri net (iteration: 0)")
+        self.solver.write(self.ptnet.smtlib_declare_places(0))
+        self.solver.write(self.ptnet.smtlib_declare_places(1))
+
+        info("[K-INDUCTION] > Formula to check the un-satisfiability (iteration: 0)")
+        self.solver.write(self.formula.smtlib(0, assertion=True, negation=True))
+        
+        info("[K-INDUCTION] > Check transition relation x0 x1")
+        self.solver.write(self.ptnet.smtlib_transition_relation(0, 1))
+        
+        info("[K-INDUCTION] > Push")
+        self.solver.push()
+        
+        info("[K-INDUCTION] > Formula to check the satisfiability (iteration: 1)")
+        self.solver.write(self.formula.smtlib(1, assertion=True))
+        
+        i = 0
+        
+        while self.solver.check_sat():
+            i += 1
+            
+            info("[K-INDUCTION] > Pop")
+            self.solver.pop()
+            
+            info("[K-INDUCTION] > Declaration of the places from the Petri net (iteration: i+1)")
+            self.solver.write(self.ptnet.smtlib_declare_places(i+1))
+            
+            info("[K-INDUCTION] > Formula unsat of x1")
+            self.solver.write(self.formula.smtlib(i, assertion=True, negation=True))
+            
+            info("[K-INDUCTION] > Check transition relation x1 x2")
+            self.solver.write(self.ptnet.smtlib_transition_relation(i, i+1))
+            
+            info("[K-INDUCTION] > Push")
+            self.solver.push()
+            
+            info("[K-INDUCTION] > Formula sat of x2")
+            self.solver.write(self.formula.smtlib(i+1, assertion=True))
+            
+        return i
+
     ######################

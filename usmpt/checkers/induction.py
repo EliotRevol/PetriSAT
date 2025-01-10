@@ -100,5 +100,51 @@ class Induction(AbstractChecker):
         bool, optional
             `True` if the formula is inductive, `None` otherwise.
         """
-        raise NotImplementedError
+        
+        info("[INDUCTION] > Initialization")
+
+        info("[INDUCTION] > Declaration of the places from the Petri net")
+        self.solver.write(self.ptnet.smtlib_declare_places(0))
+
+        info("[INDUCTION] > Initial marking of the Petri net")
+        self.solver.write(self.ptnet.smtlib_set_initial_marking(0))
+
+        info("[INDUCTION] > Push")
+        self.solver.push()
+
+        info("[INDUCTION] > Formula 1")
+        self.solver.write(self.formula.smtlib(0, assertion=True))
+
+        sat_1 = self.solver.check_sat()
+        
+        if sat_1:
+            info("[INDUCTION] > Formula 1 is SAT")
+            return True
+        
+        info("[INDUCTION] > Reset")
+        self.solver.reset()
+        
+        info("[INDUCTION] > Formula 2")
+        info("[INDUCTION] > Declaration of the places from the Petri net x")
+        self.solver.write(self.ptnet.smtlib_declare_places(0))
+        
+        info("[INDUCTION] > Declaration of the places from the Petri net x'")
+        self.solver.write(self.ptnet.smtlib_declare_places(1))
+        
+        self.solver.write(self.formula.smtlib(0, assertion=True, negation=True))
+    
+        self.solver.write(self.formula.smtlib(1, assertion=True))
+
+        info("[BMC] > Transition relation: {} -> {}".format(0, 1))
+        self.solver.write(self.ptnet.smtlib_transition_relation(0, 1))
+
+        
+        sat_2 = self.solver.check_sat()
+        
+        if not sat_2:
+            info("[INDUCTION] > Formula 1 & 2 are not SAT")
+            return False
+        
+        return None
+        
     ######################
