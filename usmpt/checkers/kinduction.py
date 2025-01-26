@@ -164,6 +164,7 @@ class KInduction(AbstractChecker):
             info("[K-INDUCTION] > Formula sat of x2")
             self.solver.write(self.formula.smtlib(i+1, assertion=True))
             
+        print("OUAUISIIIIISISISSISISISISISISI I I II I ", i)
         return i
 
     ######################
